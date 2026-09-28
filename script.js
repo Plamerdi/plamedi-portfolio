@@ -1,0 +1,41 @@
+const D=loadData(),$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const wa=()=>D.social.whatsapp||('https://wa.me/'+D.phone.replace(/\D/g,''));
+const cnt=el=>{const m=el.dataset.v.match(/^(\d+)(.*)$/);if(!m){el.textContent=el.dataset.v;return}let n=0,to=+m[1],st=Math.max(1,Math.ceil(to/40));const t=setInterval(()=>{n=Math.min(to,n+st);el.textContent=n+m[2];if(n>=to)clearInterval(t)},30)};
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const t=e.target;t.classList.add('in');t.querySelectorAll('.bar i').forEach(i=>i.style.width=i.dataset.w+'%');t.querySelectorAll('[data-v]').forEach(cnt);io.unobserve(t)}),{threshold:.2});
+function render(){
+$$('[data-name]').forEach(e=>e.textContent=D.name);
+const ini=D.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+$$('.photo').forEach(b=>{b.innerHTML=D.photo?`<img src="${D.photo}" alt="Portrait de ${esc(D.name)}">`:`<span class="ini">${esc(ini)}</span><img src="assets/images/profile.png" alt="Portrait de ${esc(D.name)}" onerror="this.remove()">`});
+$('#about-text').innerHTML=D.about.map(p=>`<p>${esc(p)}</p>`).join('');
+$('#stats').innerHTML=D.stats.map(s=>`<div class="rv"><b data-v="${esc(s[0])}">${esc(s[0])}</b><span>${esc(s[1])}</span></div>`).join('');
+$('#skills').innerHTML=D.skills.map(s=>`<div class="skill"><div><span>${esc(s[0])}</span><span>${+s[1]}%</span></div><div class="bar"><i data-w="${+s[1]}"></i></div></div>`).join('');
+$('#domains').innerHTML=D.domains.map(d=>`<span>${esc(d)}</span>`).join('');
+$('#svc').innerHTML=D.services.map((s,i)=>`<article class="card rv"><span class="num">${String(i+1).padStart(2,'0')}</span><div class="ic">${esc(s.ic||'✦')}</div><h3>${esc(s.t)}</h3><p>${esc(s.d)}</p></article>`).join('');
+$('#filters').innerHTML=D.cats.map((c,i)=>`<button role="tab" class="${i?'':'on'}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+$('#terms').innerHTML=D.terms.map(t=>`<li>${esc(t)}</li>`).join('');
+$('#c-mail').textContent=D.email;$('#c-mail').href='mailto:'+D.email;$('#c-tel').textContent=D.phone;$('#c-tel').href='tel:'+D.phone.replace(/[^\d+]/g,'');
+const soc=[['WhatsApp',wa()],['Facebook',D.social.facebook],['Instagram',D.social.instagram],['TikTok',D.social.tiktok],['LinkedIn',D.social.linkedin]];
+$$('.socials').forEach(b=>b.innerHTML=soc.map(s=>`<a href="${esc(s[1]||'#')}" target="_blank" rel="noopener">${s[0]}</a>`).join(''));
+gallery('Tous');
+$$('.rv,.skills,.stats').forEach(e=>io.observe(e));
+}
+function gallery(c){$('#gallery').innerHTML=D.projects.map((p,i)=>({p,i})).filter(o=>c==='Tous'||o.p.category===c).map(o=>`<button class="pj" data-i="${o.i}"><img loading="lazy" src="${o.p.image||ph(o.p.title)}" alt="${esc(o.p.title)}"><span><small>${esc(o.p.category)}</small>${esc(o.p.title)}</span></button>`).join('')||'<p class="sub c">Aucun projet dans cette catégorie pour le moment.</p>'}
+$('#filters').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('#filters button').forEach(x=>x.classList.toggle('on',x===b));gallery(b.dataset.c)});
+const modal=$('#modal');
+$('#gallery').addEventListener('click',e=>{const b=e.target.closest('.pj');if(!b)return;const p=D.projects[b.dataset.i];$('#m-img').src=p.image||ph(p.title);$('#m-img').alt=p.title;$('#m-cat').textContent=p.category;$('#m-title').textContent=p.title;$('#m-desc').textContent=p.description;modal.hidden=false;document.body.style.overflow='hidden';$('.mclose').focus()});
+const closeM=()=>{modal.hidden=true;document.body.style.overflow=''};
+modal.addEventListener('click',e=>{if(e.target===modal||e.target.classList.contains('mclose'))closeM()});
+addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
+const burger=$('.burger'),links=$('.links');
+burger.onclick=()=>{const o=links.classList.toggle('open');burger.setAttribute('aria-expanded',o)};
+links.addEventListener('click',e=>{if(e.target.closest('a')){links.classList.remove('open');burger.setAttribute('aria-expanded',false)}});
+const secs=$$('main section[id]');
+addEventListener('scroll',()=>{const y=scrollY;$('header').classList.toggle('solid',y>40);$('#totop').classList.toggle('show',y>600);let cur='accueil';secs.forEach(s=>{if(s.offsetTop-140<=y)cur=s.id});$$('.links a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur))},{passive:true});
+$('#totop').onclick=()=>scrollTo({top:0,behavior:'smooth'});
+$('#form').addEventListener('submit',e=>{e.preventDefault();const f=id=>$('#'+id).value.trim();let ok=true;
+const chk=(id,bad,m)=>{const s=$('#'+id).nextElementSibling;s.textContent=bad?m:'';if(bad)ok=false};
+chk('nom',f('nom').length<2,'Indiquez votre nom.');chk('email',!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f('email')),'Indiquez un email valide.');chk('msg',f('msg').length<10,'Décrivez votre projet en quelques mots (10 caractères minimum).');
+if(!ok)return;
+const t=`Bonjour ${D.name}, je suis ${f('nom')}.\nEmail : ${f('email')}\nTéléphone : ${f('tel')||'—'}\nProjet : ${$('#type').value}\nBudget : ${f('budget')||'—'}\n\n${f('msg')}`;
+window.open('https://wa.me/'+D.phone.replace(/\D/g,'')+'?text='+encodeURIComponent(t),'_blank');$('#ok').textContent='Merci ! WhatsApp s\'ouvre avec votre message prêt à envoyer.';e.target.reset()});
+render();
